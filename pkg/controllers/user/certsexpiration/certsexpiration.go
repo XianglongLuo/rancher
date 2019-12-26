@@ -10,8 +10,10 @@ import (
 	"github.com/rancher/kontainer-engine/cluster"
 	"github.com/rancher/rancher/pkg/controllers/management/clusterprovisioner"
 	rkecluster "github.com/rancher/rke/cluster"
+	"github.com/rancher/rke/hosts"
 	"github.com/rancher/rke/pki"
 	"github.com/rancher/rke/pki/cert"
+	"github.com/rancher/rke/services"
 	v1 "github.com/rancher/types/apis/core/v1"
 	v3 "github.com/rancher/types/apis/management.cattle.io/v3"
 	"github.com/rancher/types/config"
@@ -67,6 +69,7 @@ func (c Controller) sync(key string, cluster *v3.Cluster) (runtime.Object, error
 		}
 		certsExpInfo[certName] = info
 	}
+	deleteUnusedCerts(certsExpInfo, cluster)
 	if !reflect.DeepEqual(cluster.Status.CertificatesExpiration, certsExpInfo) {
 		toUpdate := cluster.DeepCopy()
 		toUpdate.Status.CertificatesExpiration = certsExpInfo
@@ -160,4 +163,37 @@ func getCertExpiration(c string) (v3.CertExpiration, error) {
 	return v3.CertExpiration{
 		ExpirationDate: date.Format(time.RFC3339),
 	}, nil
+}
+
+//deleteUnusedCerts removes unused certs and cleans up kubelet certs when GenerateServingCertificate is disabled
+func deleteUnusedCerts(certsExpInfo map[string]v3.CertExpiration, cluster *v3.Cluster) {
+	unusedCerts := make(map[string]bool)
+	for k := range certsExpInfo {
+		if strings.HasPrefix(k, pki.EtcdCertName) || strings.HasPrefix(k, pki.KubeletCertName) {
+			unusedCerts[k] = true
+		}
+	}
+	etcdHosts := hosts.NodesToHosts(cluster.Status.AppliedSpec.RancherKubernetesEngineConfig.Nodes, services.ETCDRole)
+	allHosts := hosts.NodesToHosts(cluster.Status.AppliedSpec.RancherKubernetesEngineConfig.Nodes, "")
+	for _, host := range etcdHosts {
+		etcdName := pki.GetCrtNameForHost(host, pki.EtcdCertName)
+		delete(unusedCerts, etcdName)
+	}
+	if !pki.IsKubeletGenerateServingCertificateEnabledinConfig(cluster.Status.AppliedSpec.RancherKubernetesEngineConfig) {
+		for k := range certsExpInfo {
+			if strings.HasPrefix(k, pki.KubeletCertName) {
+				delete(certsExpInfo, k)
+			}
+		}
+	} else {
+		for _, host := range allHosts {
+			kubeletName := pki.GetCrtNameForHost(host, pki.KubeletCertName)
+			delete(unusedCerts, kubeletName)
+		}
+	}
+	if unusedCerts != nil {
+		for k := range unusedCerts {
+			delete(certsExpInfo, k)
+		}
+	}
 }
