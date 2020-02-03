@@ -18,6 +18,7 @@ import (
 	corev1 "github.com/rancher/types/apis/core/v1"
 	mgmtv3 "github.com/rancher/types/apis/management.cattle.io/v3"
 	v3 "github.com/rancher/types/apis/project.cattle.io/v3"
+	"github.com/sirupsen/logrus"
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +87,18 @@ func (ch *clusterHandler) doSync(cluster *mgmtv3.Cluster) error {
 		var etcdTLSConfigs []*etcdTLSConfig
 		var systemComponentMap map[string][]string
 		if isRkeCluster(cluster) {
+			if etcdTLSConfigs, err = ch.deployEtcdCert(cluster.Name, appTargetNamespace); err != nil {
+				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
+				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
+				return errors.Wrap(err, "failed to deploy etcd cert")
+			}
+			if systemComponentMap, err = ch.getExporterEndpoint(); err != nil {
+				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
+				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
+				return errors.Wrap(err, "failed to get exporter endpoint")
+			}
+		}
+		if isImportedCluster(cluster) {
 			if etcdTLSConfigs, err = ch.deployEtcdCert(cluster.Name, appTargetNamespace); err != nil {
 				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
 				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
@@ -228,7 +241,6 @@ func (ch *clusterHandler) deployEtcdCert(clusterName, appTargetNamespace string)
 	_, err = agentSecretClient.Update(newSec)
 	return etcdTLSConfigs, err
 }
-
 func (ch *clusterHandler) getExporterEndpoint() (map[string][]string, error) {
 	endpointMap := make(map[string][]string)
 	etcdLablels := labels.Set{
@@ -418,7 +430,7 @@ func (ch *clusterHandler) deployApp(appName, appTargetNamespace string, appProje
 	if err != nil {
 		return nil, err
 	}
-
+	logrus.Infof("[lxl]appAnswers222 in deployApp %v", appAnswers)
 	return appAnswers, nil
 }
 
@@ -428,6 +440,10 @@ func getClusterTag(cluster *mgmtv3.Cluster) string {
 
 func isRkeCluster(cluster *mgmtv3.Cluster) bool {
 	return cluster.Status.Driver == mgmtv3.ClusterDriverRKE
+}
+
+func isImportedCluster(cluster *mgmtv3.Cluster) bool {
+	return cluster.Status.Driver == mgmtv3.ClusterDriverImported
 }
 
 func getSecretPath(secretName, name string) string {
