@@ -84,6 +84,10 @@ github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrU
 github.com/StackExchange/wmi v0.0.0-20180725035823-b12b22c5341f/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/Venafi/vcert v0.0.0-20190613103158-62139eb19b25/go.mod h1:3sXw16DKVded/kLVDma2veqEUQC7O37h98ims7cIvN4=
 github.com/VividCortex/ewma v1.1.1/go.mod h1:2Tkkvm3sRDVXaiyucHiACn4cqf7DpdyLvmxzcbUokwA=
+github.com/XianglongLuo/rke v1.1.0-rc2.0.20200204073119-e15e3c8635d2 h1:HQhSN1Jf9fEn85IhDxNeVQs38lxAvl2EJgrY30M0n84=
+github.com/XianglongLuo/rke v1.1.0-rc2.0.20200204073119-e15e3c8635d2/go.mod h1:Qp9dAbW0OUkJnSXcGpD92ubpOCe93RxSaq391RDez1w=
+github.com/XianglongLuo/rke v1.1.0-rc2.0.20200213053601-812956fe9cff h1:zQO8GIBhg/aPgCzm+7zxxGZ/9Ut0Qc2EJMDv2HHYdYA=
+github.com/XianglongLuo/rke v1.1.0-rc2.0.20200213053601-812956fe9cff/go.mod h1:Qp9dAbW0OUkJnSXcGpD92ubpOCe93RxSaq391RDez1w=
 github.com/a8m/mark v0.1.1-0.20170507133748-44f2db618845/go.mod h1:c8Mh99Cw82nrsAnPgxQSZHkswVOJF7/MqZb1ZdvriLM=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
