@@ -51,6 +51,9 @@ func (c Controller) sync(key string, cluster *v3.Cluster) (runtime.Object, error
 	if cluster.Spec.RancherKubernetesEngineConfig == nil {
 		return cluster, nil
 	}
+	if cluster.Status.AppliedSpec.RancherKubernetesEngineConfig == nil {
+		return cluster, nil
+	}
 	certsExpInfo := map[string]v3.CertExpiration{}
 
 	cluster, err := c.ClusterLister.Get("", key)
@@ -69,9 +72,9 @@ func (c Controller) sync(key string, cluster *v3.Cluster) (runtime.Object, error
 		}
 		certsExpInfo[certName] = info
 	}
-	logrus.Debugf("Checking and deleting unused kubelet certificates, current etcd nodes are: %v", hosts.NodesToHosts(cluster.Spec.RancherKubernetesEngineConfig.Nodes, ""))
-	logrus.Debugf("Checking and deleting unused etcd certificates, current worker nodes are: %v", hosts.NodesToHosts(cluster.Spec.RancherKubernetesEngineConfig.Nodes, services.ETCDRole))
-	deleteUnusedCerts(certsExpInfo, cluster)
+	logrus.Debugf("Checking and deleting unused kubelet certificates, current woker nodes are: %v", hosts.NodesToHosts(cluster.Status.AppliedSpec.RancherKubernetesEngineConfig.Nodes, ""))
+	logrus.Debugf("Checking and deleting unused etcd certificates, current etcd nodes are: %v", hosts.NodesToHosts(cluster.Status.AppliedSpec.RancherKubernetesEngineConfig.Nodes, services.ETCDRole))
+	deleteUnusedCerts(certsExpInfo, cluster.Status.AppliedSpec.RancherKubernetesEngineConfig)
 	if !reflect.DeepEqual(cluster.Status.CertificatesExpiration, certsExpInfo) {
 		toUpdate := cluster.DeepCopy()
 		toUpdate.Status.CertificatesExpiration = certsExpInfo
@@ -168,22 +171,25 @@ func getCertExpiration(c string) (v3.CertExpiration, error) {
 }
 
 //deleteUnusedCerts removes unused certs and cleans up kubelet certs when GenerateServingCertificate is disabled
-func deleteUnusedCerts(certsExpInfo map[string]v3.CertExpiration, cluster *v3.Cluster) {
+func deleteUnusedCerts(certsExpInfo map[string]v3.CertExpiration, rancherKubernetesEngineConfig *v3.RancherKubernetesEngineConfig) {
 	logrus.Info("Checking and deleting unused certificates")
+	logrus.Infof("[lxl]rancherKubernetesEngineConfig:%v", rancherKubernetesEngineConfig)
 	unusedCerts := make(map[string]bool)
 	for k := range certsExpInfo {
 		if strings.HasPrefix(k, pki.EtcdCertName) || strings.HasPrefix(k, pki.KubeletCertName) {
 			unusedCerts[k] = true
 		}
 	}
-	etcdHosts := hosts.NodesToHosts(cluster.Spec.RancherKubernetesEngineConfig.Nodes, services.ETCDRole)
-	allHosts := hosts.NodesToHosts(cluster.Spec.RancherKubernetesEngineConfig.Nodes, "")
+	etcdHosts := hosts.NodesToHosts(rancherKubernetesEngineConfig.Nodes, services.ETCDRole)
+	allHosts := hosts.NodesToHosts(rancherKubernetesEngineConfig.Nodes, "")
 	for _, host := range etcdHosts {
+		logrus.Infof("[lxl]etcdhost:%v", host)
 		etcdName := pki.GetCrtNameForHost(host, pki.EtcdCertName)
 		delete(unusedCerts, etcdName)
 	}
-	if pki.IsKubeletGenerateServingCertificateEnabledinConfig(cluster.Spec.RancherKubernetesEngineConfig) {
+	if pki.IsKubeletGenerateServingCertificateEnabledinConfig(rancherKubernetesEngineConfig) {
 		for _, host := range allHosts {
+			logrus.Infof("[lxl]host:%v", host)
 			kubeletName := pki.GetCrtNameForHost(host, pki.KubeletCertName)
 			delete(unusedCerts, kubeletName)
 		}
