@@ -25,33 +25,31 @@ func TestDeleteUnusedCerts(t *testing.T) {
 				"kube-proxy":           v3.CertExpiration{},
 			},
 			cluster: &v3.Cluster{
-				Status: v3.ClusterStatus{
-					AppliedSpec: v3.ClusterSpec{
-						ClusterSpecBase: v3.ClusterSpecBase{
-							RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
-								Services: v3.RKEConfigServices{
-									Kubelet: v3.KubeletService{
-										GenerateServingCertificate: true,
+				Spec: v3.ClusterSpec{
+					ClusterSpecBase: v3.ClusterSpecBase{
+						RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
+							Services: v3.RKEConfigServices{
+								Kubelet: v3.KubeletService{
+									GenerateServingCertificate: true,
+								},
+							},
+							Nodes: []v3.RKEConfigNode{
+								{
+									Address: "172.17.0.3",
+									Role: []string{
+										"etcd",
 									},
 								},
-								Nodes: []v3.RKEConfigNode{
-									{
-										Address: "172.17.0.3",
-										Role: []string{
-											"etcd",
-										},
+								{
+									Address: "172.17.0.4",
+									Role: []string{
+										"etcd",
 									},
-									{
-										Address: "172.17.0.4",
-										Role: []string{
-											"etcd",
-										},
-									},
-									{
-										Address: "172.17.0.5",
-										Role: []string{
-											"etcd",
-										},
+								},
+								{
+									Address: "172.17.0.5",
+									Role: []string{
+										"etcd",
 									},
 								},
 							},
@@ -80,33 +78,31 @@ func TestDeleteUnusedCerts(t *testing.T) {
 				"kube-proxy":              v3.CertExpiration{},
 			},
 			cluster: &v3.Cluster{
-				Status: v3.ClusterStatus{
-					AppliedSpec: v3.ClusterSpec{
-						ClusterSpecBase: v3.ClusterSpecBase{
-							RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
-								Services: v3.RKEConfigServices{
-									Kubelet: v3.KubeletService{
-										GenerateServingCertificate: true,
+				Spec: v3.ClusterSpec{
+					ClusterSpecBase: v3.ClusterSpecBase{
+						RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
+							Services: v3.RKEConfigServices{
+								Kubelet: v3.KubeletService{
+									GenerateServingCertificate: true,
+								},
+							},
+							Nodes: []v3.RKEConfigNode{
+								{
+									Address: "172.17.0.3",
+									Role: []string{
+										"worker",
 									},
 								},
-								Nodes: []v3.RKEConfigNode{
-									{
-										Address: "172.17.0.3",
-										Role: []string{
-											"worker",
-										},
+								{
+									Address: "172.17.0.4",
+									Role: []string{
+										"worker",
 									},
-									{
-										Address: "172.17.0.4",
-										Role: []string{
-											"worker",
-										},
-									},
-									{
-										Address: "172.17.0.5",
-										Role: []string{
-											"etcd",
-										},
+								},
+								{
+									Address: "172.17.0.5",
+									Role: []string{
+										"etcd",
 									},
 								},
 							},
@@ -137,28 +133,26 @@ func TestDeleteUnusedCerts(t *testing.T) {
 				"kube-proxy":              v3.CertExpiration{},
 			},
 			cluster: &v3.Cluster{
-				Status: v3.ClusterStatus{
-					AppliedSpec: v3.ClusterSpec{
-						ClusterSpecBase: v3.ClusterSpecBase{
-							RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
-								Services: v3.RKEConfigServices{
-									Kubelet: v3.KubeletService{
-										GenerateServingCertificate: true,
+				Spec: v3.ClusterSpec{
+					ClusterSpecBase: v3.ClusterSpecBase{
+						RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
+							Services: v3.RKEConfigServices{
+								Kubelet: v3.KubeletService{
+									GenerateServingCertificate: true,
+								},
+							},
+							Nodes: []v3.RKEConfigNode{
+								{
+									Address: "172.17.0.5",
+									Role: []string{
+										"etcd",
+										"woker",
 									},
 								},
-								Nodes: []v3.RKEConfigNode{
-									{
-										Address: "172.17.0.5",
-										Role: []string{
-											"etcd",
-											"woker",
-										},
-									},
-									{
-										Address: "172.17.0.4",
-										Role: []string{
-											"woker",
-										},
+								{
+									Address: "172.17.0.4",
+									Role: []string{
+										"woker",
 									},
 								},
 							},
@@ -187,28 +181,26 @@ func TestDeleteUnusedCerts(t *testing.T) {
 				"kube-proxy":              v3.CertExpiration{},
 			},
 			cluster: &v3.Cluster{
-				Status: v3.ClusterStatus{
-					AppliedSpec: v3.ClusterSpec{
-						ClusterSpecBase: v3.ClusterSpecBase{
-							RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
-								Services: v3.RKEConfigServices{
-									Kubelet: v3.KubeletService{
-										GenerateServingCertificate: true,
+				Spec: v3.ClusterSpec{
+					ClusterSpecBase: v3.ClusterSpecBase{
+						RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
+							Services: v3.RKEConfigServices{
+								Kubelet: v3.KubeletService{
+									GenerateServingCertificate: true,
+								},
+							},
+							Nodes: []v3.RKEConfigNode{
+								{
+									Address: "172.17.0.3",
+									Role: []string{
+										"etcd",
+										"woker",
 									},
 								},
-								Nodes: []v3.RKEConfigNode{
-									{
-										Address: "172.17.0.3",
-										Role: []string{
-											"etcd",
-											"woker",
-										},
-									},
-									{
-										Address: "172.17.0.4",
-										Role: []string{
-											"woker",
-										},
+								{
+									Address: "172.17.0.4",
+									Role: []string{
+										"woker",
 									},
 								},
 							},
@@ -236,28 +228,26 @@ func TestDeleteUnusedCerts(t *testing.T) {
 				"kube-proxy":              v3.CertExpiration{},
 			},
 			cluster: &v3.Cluster{
-				Status: v3.ClusterStatus{
-					AppliedSpec: v3.ClusterSpec{
-						ClusterSpecBase: v3.ClusterSpecBase{
-							RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
-								Services: v3.RKEConfigServices{
-									Kubelet: v3.KubeletService{
-										GenerateServingCertificate: false,
+				Spec: v3.ClusterSpec{
+					ClusterSpecBase: v3.ClusterSpecBase{
+						RancherKubernetesEngineConfig: &v3.RancherKubernetesEngineConfig{
+							Services: v3.RKEConfigServices{
+								Kubelet: v3.KubeletService{
+									GenerateServingCertificate: false,
+								},
+							},
+							Nodes: []v3.RKEConfigNode{
+								{
+									Address: "172.17.0.3",
+									Role: []string{
+										"etcd",
+										"woker",
 									},
 								},
-								Nodes: []v3.RKEConfigNode{
-									{
-										Address: "172.17.0.3",
-										Role: []string{
-											"etcd",
-											"woker",
-										},
-									},
-									{
-										Address: "172.17.0.4",
-										Role: []string{
-											"woker",
-										},
+								{
+									Address: "172.17.0.4",
+									Role: []string{
+										"woker",
 									},
 								},
 							},
