@@ -86,11 +86,25 @@ func (ch *clusterHandler) doSync(cluster *mgmtv3.Cluster) error {
 		var etcdTLSConfigs []*etcdTLSConfig
 		var systemComponentMap map[string][]string
 		if isRkeCluster(cluster) {
-			if etcdTLSConfigs, err = ch.deployEtcdCert(cluster.Name, appTargetNamespace); err != nil {
+			if etcdTLSConfigs, err = ch.deployEtcdCert(cluster.Status.Driver, cluster.Name, appTargetNamespace); err != nil {
 				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
 				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
 				return errors.Wrap(err, "failed to deploy etcd cert")
 			}
+			if systemComponentMap, err = ch.getExporterEndpoint(); err != nil {
+				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
+				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
+				return errors.Wrap(err, "failed to get exporter endpoint")
+			}
+		}
+
+		if isImportedCluster(cluster) {
+			if etcdTLSConfigs, err = ch.deployEtcdCert(cluster.Status.Driver, cluster.Name, appTargetNamespace); err != nil {
+				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
+				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
+				return errors.Wrap(err, "failed to deploy etcd cert")
+			}
+
 			if systemComponentMap, err = ch.getExporterEndpoint(); err != nil {
 				mgmtv3.ClusterConditionMonitoringEnabled.Unknown(cluster)
 				mgmtv3.ClusterConditionMonitoringEnabled.Message(cluster, err.Error())
@@ -175,23 +189,34 @@ func (ch *clusterHandler) ensureAppProjectName(clusterID, appTargetNamespace str
 	return appProjectName, nil
 }
 
-func (ch *clusterHandler) deployEtcdCert(clusterName, appTargetNamespace string) ([]*etcdTLSConfig, error) {
+func (ch *clusterHandler) deployEtcdCert(clusterStatusDriver string, clusterName, appTargetNamespace string) ([]*etcdTLSConfig, error) {
 	var etcdTLSConfigs []*etcdTLSConfig
+	var sec *k8scorev1.Secret
+	var rkeCertSecretName string
 
-	rkeCertSecretName := "c-" + clusterName
 	systemNamespace := "cattle-system"
-	sec, err := ch.app.cattleSecretClient.GetNamespaced(systemNamespace, rkeCertSecretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get %s:%s in deploy etcd cert to prometheus", systemNamespace, rkeCertSecretName)
+	if clusterStatusDriver == mgmtv3.ClusterDriverImported {
+		rkeCertSecretName = "cattle-etcd-cert"
+		certSecret, err := ch.app.agentSecretClient.GetNamespaced(systemNamespace, rkeCertSecretName, metav1.GetOptions{})
+		sec = certSecret
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get %s:%s in deploy etcd cert to prometheus", systemNamespace, rkeCertSecretName)
+		}
+	} else {
+		rkeCertSecretName = "c-" + clusterName
+		certSecret, err := ch.app.cattleSecretClient.GetNamespaced(systemNamespace, rkeCertSecretName, metav1.GetOptions{})
+		sec = certSecret
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get %s:%s in deploy etcd cert to prometheus", systemNamespace, rkeCertSecretName)
+		}
 	}
-
 	var data kcluster.Cluster
-	if err = json.Unmarshal(sec.Data["cluster"], &data); err != nil {
+	if err := json.Unmarshal(sec.Data["cluster"], &data); err != nil {
 		return nil, errors.Wrapf(err, "failed to decode secret %s:%s to get etcd cert", systemNamespace, rkeCertSecretName)
 	}
 
 	crts := make(map[string]map[string]string)
-	if err = json.Unmarshal([]byte(data.Metadata["Certs"]), &crts); err != nil {
+	if err := json.Unmarshal([]byte(data.Metadata["Certs"]), &crts); err != nil {
 		return nil, errors.Wrapf(err, "failed to decode secret %s:%s cert data to get etcd cert", systemNamespace, rkeCertSecretName)
 	}
 
@@ -433,6 +458,10 @@ func getClusterTag(cluster *mgmtv3.Cluster) string {
 
 func isRkeCluster(cluster *mgmtv3.Cluster) bool {
 	return cluster.Status.Driver == mgmtv3.ClusterDriverRKE
+}
+
+func isImportedCluster(cluster *mgmtv3.Cluster) bool {
+	return cluster.Status.Driver == mgmtv3.ClusterDriverImported
 }
 
 func getSecretPath(secretName, name string) string {
