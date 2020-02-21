@@ -331,6 +331,8 @@ func (ch *clusterHandler) deployApp(appName, appTargetNamespace string, appProje
 		"exporter-kube-etcd.enabled":  "false",
 		"exporter-kube-etcd.apiGroup": monitoring.APIVersion.Group,
 
+		"etcd-cert.enabled": "false",
+
 		"exporter-kube-scheduler.enabled":  "false",
 		"exporter-kube-scheduler.apiGroup": monitoring.APIVersion.Group,
 
@@ -376,6 +378,10 @@ func (ch *clusterHandler) deployApp(appName, appTargetNamespace string, appProje
 	// cannot overwrite mustAppAnswers
 	for mustKey, mustVal := range mustAppAnswers {
 		appAnswers[mustKey] = mustVal
+	}
+
+	if isImportedCluster(cluster) {
+		appAnswers["etcd-cert.enabled"] = "true"
 	}
 
 	if systemComponentMap != nil {
